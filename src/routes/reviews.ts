@@ -42,4 +42,35 @@ router.post('/addReview', async (req, res) => {
   }
 });
 
+// Get reviews by productId and rating
+router.get('/reviews/:productId/:rating', async (req, res) => {
+  try {
+    const { productId, rating } = req.params;
+    const parsedRating = parseInt(rating);
+
+    if (isNaN(parsedRating) || parsedRating < 0 || parsedRating > 5) {
+      return res
+        .status(400)
+        .json({ error: 'Invalid rating. Rating must be between 0 and 5.' });
+    }
+
+    const reviews = await AppDataSource.manager.find(Review, {
+      where: {
+        product: { id: parseInt(productId) },
+        rating: parsedRating,
+      },
+      relations: ['customer', 'product'],
+    });
+
+    if (reviews.length > 0) {
+      res.json(reviews);
+    } else {
+      res.status(404).json({ error: 'No reviews found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 export default router;
